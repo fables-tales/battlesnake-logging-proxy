@@ -122,11 +122,7 @@ func ProxyRequestHandler(proxy *httputil.ReverseProxy, db *sql.DB) func(http.Res
 			}
 			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
-			if insertStart(db, game.Game.Id, body) != nil {
-				http.Error(w, "can't insert start", http.StatusBadRequest)
-				return
-			}
-
+			go insertStart(db, game.Game.Id, body)
 		} else if r.URL.Path == "/move" {
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
@@ -141,10 +137,9 @@ func ProxyRequestHandler(proxy *httputil.ReverseProxy, db *sql.DB) func(http.Res
 			}
 
 			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-			if insertMove(db, game.Game.Id, game.Turn, body) != nil {
-				http.Error(w, "can't insert move", http.StatusBadRequest)
-				return
-			}
+			go func() {
+				insertMove(db, game.Game.Id, game.Turn, body)
+			}()
 		} else if r.URL.Path == "/end" {
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
@@ -160,10 +155,9 @@ func ProxyRequestHandler(proxy *httputil.ReverseProxy, db *sql.DB) func(http.Res
 			}
 
 			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-			if insertEnd(db, game.Game.Id, body) != nil {
-				http.Error(w, "can't insert end", http.StatusBadRequest)
-				return
-			}
+			go func() {
+				insertEnd(db, game.Game.Id, body)
+			}()
 		}
 
 		proxy.ServeHTTP(w, r)
