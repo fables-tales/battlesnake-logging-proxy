@@ -107,6 +107,8 @@ type Game struct {
 func ProxyRequestHandler(proxy *httputil.ReverseProxy, db *sql.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Proxying request:", r.URL.Path)
+		origBody := r.Body
+		defer origBody.Close()
 
 		if r.URL.Path == "/start" {
 			body, err := ioutil.ReadAll(r.Body)
